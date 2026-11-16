@@ -3,8 +3,12 @@
 create table if not exists ai_usage (
   id           bigserial primary key,
   session_hash text        not null,
-  created_at   timestamptz not null default now()
+  created_at   timestamptz not null default now(),
+  model        text        not null default 'gemini-3.5-flash-lite'
 );
+-- 已存在的数据库也要补上这个栏位 / upgrade an existing database
+alter table ai_usage add column if not exists model text not null default 'gemini-3.5-flash-lite';
+alter table ai_usage alter column model set default 'gemini-3.5-flash-lite';
 create index if not exists ai_usage_session_time on ai_usage (session_hash, created_at);
 
 create table if not exists records (

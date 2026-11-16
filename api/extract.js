@@ -9,7 +9,7 @@ import { getVisitorId, hashVisitor } from '../lib/visitor.js';
 const LIMIT = 5;
 const LIMIT_MESSAGE = 'You have reached the limit for this hour, try again later';
 const FAIL_MESSAGE = 'AI 暂时无法读取，请手动输入数字。';
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_TEXT = 8000;
 const MAX_B64 = 6 * 1024 * 1024; // 约 4.5 MB 的图片 base64 后的长度，留在 Vercel 上限内
@@ -116,7 +116,7 @@ export default async function handler(req, res) {
     }
 
     // 2. 先记下这一次，失败的请求也算次数
-    await sql`insert into ai_usage (session_hash) values (${hash})`;
+    await sql`insert into ai_usage (session_hash, model) values (${hash}, ${MODEL})`;
   } catch (e) {
     console.error('extract: database check failed', e && e.message);
     return res.status(500).json({ message: '服务器暂时无法连接数据库，请稍后再试。' });

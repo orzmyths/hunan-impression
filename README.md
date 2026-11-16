@@ -27,7 +27,7 @@ Built for a Vercel Hobby deployment with a Gemini free-tier key and a free Neon 
 | 名称 | 用途 |
 |---|---|
 | `GEMINI_API_KEY` | Gemini API key，只存在 Vercel，不放进代码 |
-| `GEMINI_MODEL` | 例如 `gemini-2.5-flash`（以 AI Studio 显示为准） |
+| `GEMINI_MODEL` | 例如 `gemini-3.5-flash-lite`（默认值，以 AI Studio 显示为准） |
 | `DATABASE_URL` | Neon pooled connection string |
 
 ## Database setup
