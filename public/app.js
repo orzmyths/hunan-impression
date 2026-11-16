@@ -242,6 +242,7 @@
       : '';
     var moreOpen = (d.sales !== '' || (d.tips !== '' && d.tips !== '0') || d.source !== 'manual') ? ' open' : '';
     return '<h2>第一步：今天的营业</h2>' +
+      '<div id="consent-slot"></div>' +
       '<div id="ai-slot"></div>' +
       '<p class="hint">服务费就是今天要分的钱。请直接填收银报表上的「服务费总额」。</p>' +
       '<div class="fields2">' +
@@ -977,6 +978,14 @@
       save();
     },
     refresh: function () { render(); },
+    clearLocal: function () {
+      try { localStorage.removeItem(KEY); } catch (e) { /* 忽略 ignore */ }
+      state = defaultState();
+      ui.dedForm = null;
+      save();
+      toast('已删除本设备上的员工卡与历史记录。');
+      render();
+    },
     toast: function (m) { toast(m); },
     afterRender: null,
     onSaved: null
