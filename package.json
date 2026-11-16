@@ -1,0 +1,17 @@
+{
+  "name": "hunan-impression",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "韶山印象 服务费分配 · Hunan Impression service charge distribution",
+  "scripts": {
+    "test": "node tests/test-engine.cjs",
+    "check": "node --check api/extract.js && node --check api/records.js && node --check api/shifts.js && node --check lib/db.js && node --check lib/visitor.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

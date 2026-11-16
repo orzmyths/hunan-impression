@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记录页 · 韶山印象 Hunan Impression</title>
+<style>
+  :root { --accent:#8a1c1c; --ink:#2b2320; --muted:#7a6f69; --line:#e7dfd8; --bg:#faf7f3; --warn:#fff4d6; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: "PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif; background:var(--bg); color:var(--ink); }
+  header { padding:18px 16px; background:var(--accent); color:#fff; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:20px; }
+  header a { color:#fff; font-weight:600; }
+  main { max-width:1000px; margin:0 auto; padding:16px; }
+  .note { background:var(--warn); border-radius:10px; padding:10px 12px; font-size:14px; margin-bottom:14px; }
+  .wrap { overflow-x:auto; background:#fff; border:1px solid var(--line); border-radius:12px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; min-width:720px; }
+  th, td { padding:10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  th { background:#f5efe9; font-weight:600; }
+  .badge { display:inline-block; font-size:12px; padding:2px 8px; border-radius:999px; background:#eadfd3; color:#6b3d1c; margin-left:6px; white-space:nowrap; }
+  .st-ok { color:#1d6b3a; font-weight:600; }
+  .st-error { color:#9b1b1b; font-weight:600; }
+  .st-limited { color:#8a5a00; font-weight:600; }
+  .muted { color:var(--muted); font-size:12px; }
+  nav.pages { display:flex; gap:10px; align-items:center; justify-content:center; margin:16px 0; flex-wrap:wrap; }
+  button { font:inherit; padding:8px 14px; border-radius:8px; border:1px solid var(--accent); background:#fff; color:var(--accent); cursor:pointer; }
+  button:disabled { opacity:.4; cursor:default; }
+  #msg { text-align:center; color:var(--muted); padding:20px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>记录页 Records</h1>
+  <a href="/">← 回到韶山印象服务费分配</a>
+</header>
+<main>
+  <div class="note">
+    每一次 AI 读取都会保存在这里（时间、方式、状态、AI 数字、确认后的数字）。
+    标有「示例（虚构）」的是假资料，只用来示范，不是真实营业数字。
+  </div>
+  <div class="wrap">
+    <table>
+      <thead>
+        <tr><th>时间</th><th>方式</th><th>状态</th><th>AI 读取的数字</th><th>确认后的数字</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div id="msg">载入中…</div>
+  <nav class="pages">
+    <button id="prev">上一页</button>
+    <span id="pageinfo" class="muted"></span>
+    <button id="next">下一页</button>
+  </nav>
+</main>
+<script>
+(function () {
+  'use strict';
+  var page = 1, pages = 1;
+  var STATUS = { ok: '成功', error: '失败', limited: '达到上限' };
+  var TYPE = { photo: '照片', text: '文字' };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function money(v) {
+    return v == null || v === '' || isNaN(Number(v)) ? '—' : '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function cents(c) { return c == null ? null : Number(c) / 100; }
+
+  function aiCell(r) {
+    var o = r.ai_output || {};
+    if (r.status !== 'ok') return '<span class="muted">' + esc(o.error || '') + '</span>';
+    var miss = Array.isArray(o.unreadable_fields) && o.unreadable_fields.length
+      ? '<div class="muted">无法辨识：' + esc(o.unreadable_fields.join('、')) + '</div>' : '';
+    return esc((o.date || '日期未知') + ' · ' + (o.shift || '班次未知')) + '<br>' +
+      '净销售额 ' + money(o.net_sales) + '<br>服务费 ' + money(o.service_charge) + miss;
+  }
+  function finalCell(r) {
+    var f = r.final_numbers;
+    if (!f) return '<span class="muted">尚未存档</span>';
+    return esc((f.date || '') + ' · ' + (f.shift || '')) + '<br>服务费池 ' + money(cents(f.pool_cents)) +
+      '<br>店家留下 ' + money(cents(f.house_cents)) + '<br>人数 ' + esc(f.people);
+  }
+
+  function row(r) {
+    var when = new Date(r.created_at).toLocaleString('zh-CN', { hour12: false });
+    var badge = r.is_sample ? '<span class="badge">示例（虚构）</span>' : '';
+    var summary = '<div class="muted">' + esc(r.input_summary || '') + '</div>';
+    return '<tr>' +
+      '<td>' + esc(when) + '<div class="muted">来源 ' + esc(r.visitor) + '…</div></td>' +
+      '<td>' + esc(TYPE[r.input_type] || r.input_type) + badge + summary + '</td>' +
+      '<td class="st-' + esc(r.status) + '">' + esc(STATUS[r.status] || r.status) + '</td>' +
+      '<td>' + aiCell(r) + '</td>' +
+      '<td>' + finalCell(r) + '</td>' +
+      '</tr>';
+  }
+
+  function load(p) {
+    var msg = document.getElementById('msg');
+    msg.textContent = '载入中…';
+    fetch('/api/records?page=' + p, { credentials: 'same-origin' })
+      .then(function (res) { if (!res.ok) throw new Error('http'); return res.json(); })
+      .then(function (d) {
+        page = d.page; pages = d.pages;
+        document.getElementById('rows').innerHTML = d.rows.length
+          ? d.rows.map(row).join('')
+          : '<tr><td colspan="5" class="muted">还没有记录。</td></tr>';
+        msg.textContent = d.total ? '' : '';
+        document.getElementById('pageinfo').textContent = '第 ' + page + ' / ' + pages + ' 页，共 ' + d.total + ' 笔';
+        document.getElementById('prev').disabled = page <= 1;
+        document.getElementById('next').disabled = page >= pages;
+      })
+      .catch(function () { msg.textContent = '无法读取记录，请稍后再试。'; });
+  }
+
+  document.getElementById('prev').addEventListener('click', function () { if (page > 1) load(page - 1); });
+  document.getElementById('next').addEventListener('click', function () { if (page < pages) load(page + 1); });
+  load(1);
+})();
+</script>
+</body>
+</html>
